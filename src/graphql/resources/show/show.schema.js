@@ -14,6 +14,7 @@ const showTypes = `
         uf: String!
         date: String!
         time: String!
+        availability: Boolean!
         tickets: [Ticket!]!
     }
 
@@ -45,7 +46,7 @@ const showQueries = `
 `;
 
 const showMutations = `
-    createShows(name: String!, image: String!, description: String, cep: String!, date: String!, time: String!): Show!
+    createShows(name: String!, image: String, description: String, cep: String!, date: String!, time: String!): Show!
     deleteShows(key: String!): Boolean!
 `;
 
