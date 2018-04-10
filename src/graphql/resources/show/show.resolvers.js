@@ -11,7 +11,7 @@ const fetchToApiCEP = (cep) => {
     return axios(config);
 };
 
-const mountObjectNewShow = async ({ name, image, description = '', cep, date, time }) => {
+const mountObjectNewShow = async ({ name, image = {}, description = '', cep, date, time, availability = true }) => {
     const cepRequest = await fetchToApiCEP(cep)
         .then(res => {
             return res.data;
@@ -29,6 +29,7 @@ const mountObjectNewShow = async ({ name, image, description = '', cep, date, ti
         uf: cepRequest.uf,
         date,
         time,
+        availability,
     };
 };
 
@@ -53,6 +54,10 @@ export const showResolvers = {
 
         allShows: async (parent, { filter }, { mongo: { Shows } }, info) => {
             let query = filter ? {$or: buildFilters(filter)} : {};
+            query = {
+                ...query,
+                availability: true,
+            };
             return await Shows.find(query).toArray();
         },
 
@@ -61,7 +66,7 @@ export const showResolvers = {
     Mutation: {
 
         createShows: async (parent, args, { mongo: { Shows } }, info) => {
-            const newShow = mountObjectNewShow(args);
+            const newShow = await mountObjectNewShow(args);
             const response = await Shows.insert(newShow);
             newShow.id = response.insertedIds[0];
             return newShow;
@@ -77,7 +82,7 @@ export const showResolvers = {
     Show: {
         id: parent => parent._id || parent.id,
         tickets: async (parent, args, { mongo: { Tickets } }, info) => {
-            return await Tickets.find({ show: parent._id.toString() }).toArray();
+            return await Tickets.find({ show: parent.key }).toArray();
         }
     }
 };

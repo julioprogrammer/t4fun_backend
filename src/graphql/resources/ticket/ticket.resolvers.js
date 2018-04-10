@@ -1,4 +1,5 @@
 import pubsub from '../../../pubsub';
+import updateExternalCollections from '../utils/updateExternalCollections';
 
 const buildFilters = ({OR = [], show_contains}) => {
     const filter = (show_contains) ? {} : null;
@@ -39,7 +40,7 @@ export const ticketResolvers = {
             return newTicket;
         },
 
-        updateTickets: async (parent, { keys }, { mongo: { Tickets } }, info) => {
+        updateTickets: async (parent, { keys }, { mongo: { Tickets, Shows } }, info) => {
             const oldTickets = await Tickets.find({
                 key: { $in: keys }
             }).toArray();
@@ -49,6 +50,12 @@ export const ticketResolvers = {
             }));
             keys.forEach(async (key, index) => {
                 await Tickets.update({ key }, { ...updatedTickets[index] });
+            });
+            const numberOfTicketsMadeAvailable = await Tickets.find( { show: oldTickets[0].show, availability: true } ).count();
+            if (!numberOfTicketsMadeAvailable) await updateExternalCollections({
+                collection: Shows,
+                condition: { key: oldTickets[0].show },
+                fieldsToBeChanged: { availability: false },
             });
             return updatedTickets;
         },
